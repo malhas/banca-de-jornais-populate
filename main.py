@@ -50,6 +50,7 @@ def populate_db(items: list):
         None
     """
     count = 0
+    updated = 0
     uri = f"mongodb+srv://admin:{MONGODB_PASSWORD}@cluster0.3goysx3.mongodb.net/?retryWrites=true&w=majority"
     client = MongoClient(uri, tlsCAFile=certifi.where())
     try:
@@ -61,12 +62,21 @@ def populate_db(items: list):
     db = client["capasjornais"]
     collection = db["Capas"]
     for item in items:
-        dbitem = collection.find_one({"name": item["name"], "publish_date": item["publish_date"]})
+        dbitem = collection.find_one(
+            {"name": item["name"], "publish_date": item["publish_date"], "item_id": item["item_id"]}
+        )
         if not dbitem:
             collection.insert_one(item)
             count += 1
+        else:
+            if item["image_url"] != dbitem["image_url"]:
+                collection.update_one(
+                    {"name": item["name"], "publish_date": item["publish_date"], "item_id": item["item_id"]},
+                    {"$set": item},
+                )
+                updated += 1
 
-    print(f"Inserted {count} capas")
+    print(f"Inserted {count} capas and updated {updated} capas")
 
 
 def main():
