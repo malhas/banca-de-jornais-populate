@@ -29,6 +29,18 @@ TWITTER_ACCOUNTS = {
     "O Jogo": {"account": "@ojogo", "tags": "#Desporto"},
     "A Bola": {"account": "@abolapt", "tags": "#Desporto"},
     "Record": {"account": "@Record_Portugal", "tags": "#Desporto"},
+    "El País": {"account": "@elpais_espana", "tags": "#Noticias"},
+    "El Mundo": {"account": "@elmundoes", "tags": "#Noticias"},
+    "Le Monde": {"account": "@lemondefr", "tags": "#Noticias"},
+    "Le Figaro": {"account": "@Le_Figaro", "tags": "#Noticias"},
+    "The Daily Telegraph": {"account": "@Telegraph", "tags": "#News"},
+    "The Guardian": {"account": "@guardian", "tags": "#News"},
+    "The Independent": {"account": "@independent", "tags": "#News"},
+    "The Daily Mirror": {"account": "@Mirror", "tags": "#News"},
+    "Marca": {"account": "@marca", "tags": "#Deporte"},
+    "AS": {"account": "@diarioas", "tags": "#Deporte"},
+    "Gazzetta dello Sport": {"account": "@Gazzetta_it", "tags": "#Sport"},
+    "L'Équipe": {"account": "@lequipe", "tags": "#Sport"},
 }
 
 
