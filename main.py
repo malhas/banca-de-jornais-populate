@@ -5,6 +5,7 @@ from pymongo import MongoClient
 import certifi
 from dotenv import load_dotenv
 import tweepy
+from tweepy.errors import TwitterServerError
 
 load_dotenv()
 
@@ -18,14 +19,14 @@ TWITTER_ACCESS_SECRET = os.environ.get("TWITTER_ACCESS_SECRET")
 
 TWITTER_ACCOUNTS = {
     "Expresso": {"account": "@expresso", "tags": "#Notícias"},
-    "SOL": {"account": "@solonline", "tags": "#Notícias"},
+    "Nascer do SOL": {"account": "@solonline", "tags": "#Notícias"},
     "Correio da Manhã": {"account": "@cmjornal", "tags": "#Notícias"},
     "Jornal de Notícias": {"account": "@jornalnoticias", "tags": "#Notícias"},
     "Público": {"account": "@publico", "tags": "#Notícias"},
     "Diário de Notícias": {"account": "@dntwit", "tags": "#Notícias"},
-    "Diário Económico": {"account": "@diarioeconomico", "tags": "#Economia"},
+    "O Jornal Económico": {"account": "@ojeconomico", "tags": "#Economia"},
     "Jornal de Negócios": {"account": "@JNegocios", "tags": "#Economia"},
-    "O Jogo": {"account": "@ojogo", "tags": "#Deporto"},
+    "O Jogo": {"account": "@ojogo", "tags": "#Desporto"},
     "A Bola": {"account": "@abolapt", "tags": "#Desporto"},
     "Record": {"account": "@Record_Portugal", "tags": "#Desporto"},
 }
@@ -155,6 +156,7 @@ def upload_media(image_url: str, item_id: str, publish_date: str) -> int:
     img_data = requests.get(image_url).content
     with open(file_name, "wb") as handler:
         handler.write(img_data)
+    print("Uploading media...")
     post = tweepy_api.media_upload(filename=file_name)
     media_id = post.media_id
     os.remove(file_name)
@@ -175,10 +177,14 @@ def tweet_capa(name: str, publish_date: str, media_id: int):
     """
 
     client = get_twitter_conn_v2()
-    client.create_tweet(
-        text=f" {name} {publish_date} {TWITTER_ACCOUNTS[name]['account']} {TWITTER_ACCOUNTS[name]['tags']}",
-        media_ids=[media_id],
-    )
+    try:
+        print("Tweeting...")
+        client.create_tweet(
+            text=f" {name} {publish_date} {TWITTER_ACCOUNTS[name]['account']} {TWITTER_ACCOUNTS[name]['tags']}",
+            media_ids=[media_id],
+        )
+    except TwitterServerError as e:
+        print(e)
 
 
 def main():
@@ -199,6 +205,7 @@ def main():
 
     for capa in new_capas:
         if capa["name"] in TWITTER_ACCOUNTS:
+            print(f"Tweeting {capa['name']}")
             media_id = upload_media(
                 capa["image_url"],
                 capa["item_id"],
