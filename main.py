@@ -215,7 +215,7 @@ def main():
     capas = create_object()
     new_capas = populate_db(capas)
 
-    for capa in capas:
+    for capa in new_capas:
         if capa["name"] in TWITTER_ACCOUNTS:
             print(f"Tweeting {capa['name']}")
             media_id = upload_media(
