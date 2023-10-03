@@ -6,6 +6,8 @@ import certifi
 from dotenv import load_dotenv
 import tweepy
 from tweepy.errors import TwitterServerError
+from instagrapi import Client
+from PIL import Image
 
 load_dotenv()
 
@@ -16,31 +18,33 @@ TWITTER_API_KEY = os.environ.get("TWITTER_API_KEY")
 TWITTER_API_SECRET = os.environ.get("TWITTER_API_SECRET")
 TWITTER_ACCESS_TOKEN = os.environ.get("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_SECRET = os.environ.get("TWITTER_ACCESS_SECRET")
+INSTAGRAM_USERNAME = os.environ.get("INSTAGRAM_USERNAME")
+INSTAGRAM_PASSWORD = os.environ.get("INSTAGRAM_PASSWORD")
 
-TWITTER_ACCOUNTS = {
-    "Expresso": {"account": "@expresso", "tags": "#Notícias"},
-    "Nascer do SOL": {"account": "@solonline", "tags": "#Notícias"},
-    "Correio da Manhã": {"account": "@cmjornal", "tags": "#Notícias"},
-    "Jornal de Notícias": {"account": "@jornalnoticias", "tags": "#Notícias"},
-    "Público": {"account": "@publico", "tags": "#Notícias"},
-    "Diário de Notícias": {"account": "@dntwit", "tags": "#Notícias"},
-    "O Jornal Económico": {"account": "@ojeconomico", "tags": "#Economia"},
-    "Jornal de Negócios": {"account": "@JNegocios", "tags": "#Economia"},
-    "O Jogo": {"account": "@ojogo", "tags": "#Desporto"},
-    "A Bola": {"account": "@abolapt", "tags": "#Desporto"},
-    "Record": {"account": "@Record_Portugal", "tags": "#Desporto"},
-    "El País": {"account": "@elpais_espana", "tags": "#Noticias"},
-    "El Mundo": {"account": "@elmundoes", "tags": "#Noticias"},
-    "Le Monde": {"account": "@lemondefr", "tags": "#Noticias"},
-    "Le Figaro": {"account": "@Le_Figaro", "tags": "#Noticias"},
-    "The Daily Telegraph": {"account": "@Telegraph", "tags": "#News"},
-    "The Guardian": {"account": "@guardian", "tags": "#News"},
-    "The Independent": {"account": "@independent", "tags": "#News"},
-    "The Daily Mirror": {"account": "@Mirror", "tags": "#News"},
-    "Marca": {"account": "@marca", "tags": "#Deporte"},
-    "AS": {"account": "@diarioas", "tags": "#Deporte"},
-    "Gazzetta dello Sport": {"account": "@Gazzetta_it", "tags": "#Sport"},
-    "L'Équipe": {"account": "@lequipe", "tags": "#Sport"},
+CAPAS = {
+    "Expresso": {"twitter": "@expresso", "instagram": "@jornalexpresso", "tags": "#Notícias"},
+    "Nascer do SOL": {"twitter": "@solonline", "instagram": "@jornalsol", "tags": "#Notícias"},
+    "Correio da Manhã": {"twitter": "@cmjornal", "instagram": "@correiodamanhaoficial", "tags": "#Notícias"},
+    "Jornal de Notícias": {"twitter": "@jornalnoticias", "instagram": "@jornaldenoticias", "tags": "#Notícias"},
+    "Público": {"twitter": "@publico", "instagram": "@publico.pt", "tags": "#Notícias"},
+    "Diário de Notícias": {"twitter": "@dntwit", "instagram": "@diariodenoticias.pt", "tags": "#Notícias"},
+    "O Jornal Económico": {"twitter": "@ojeconomico", "instagram": "@jornaleconomico", "tags": "#Economia"},
+    "Jornal de Negócios": {"twitter": "@JNegocios", "instagram": "@negocios.pt", "tags": "#Economia"},
+    "O Jogo": {"twitter": "@ojogo", "instagram": "@diariodesportivo.ojogo", "tags": "#Desporto"},
+    "A Bola": {"twitter": "@abolapt", "instagram": "@abolapt", "tags": "#Desporto"},
+    "Record": {"twitter": "@Record_Portugal", "instagram": "@record_portugal", "tags": "#Desporto"},
+    "El País": {"twitter": "@elpais_espana", "instagram": "@el_pais", "tags": "#Noticias"},
+    "El Mundo": {"twitter": "@elmundoes", "instagram": "@elmundo_es", "tags": "#Noticias"},
+    "Le Monde": {"twitter": "@lemondefr", "instagram": "@lemondefr", "tags": "#Noticias"},
+    "Le Figaro": {"twitter": "@Le_Figaro", "instagram": "@lefigarofr", "tags": "#Noticias"},
+    "The Daily Telegraph": {"twitter": "@Telegraph", "instagram": "@telegraph", "tags": "#News"},
+    "The Guardian": {"twitter": "@guardian", "instagram": "@guardian", "tags": "#News"},
+    "The Independent": {"twitter": "@independent", "instagram": "@the.independent", "tags": "#News"},
+    "The Daily Mirror": {"twitter": "@Mirror", "instagram": "@dailymirror", "tags": "#News"},
+    "Marca": {"twitter": "@marca", "instagram": "@marca", "tags": "#Deporte"},
+    "AS": {"twitter": "@diarioas", "instagram": "@diarioas", "tags": "#Deporte"},
+    "Gazzetta dello Sport": {"twitter": "@Gazzetta_it", "instagram": "@gazzettadellosport", "tags": "#Sport"},
+    "L'Équipe": {"twitter": "@lequipe", "instagram": "@lequipe", "tags": "#Sport"},
 }
 
 
@@ -150,7 +154,20 @@ def get_twitter_conn_v2() -> tweepy.Client:
     return client
 
 
-def upload_media(image_url: str, item_id: str, publish_date: str) -> int:
+def get_insta_conn() -> Client:
+    """
+    Get an instance of the `Client` class to connect to Instagram.
+
+    :return: An instance of the `Client` class.
+    :rtype: Client
+    """
+    cl = Client()
+    cl.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
+
+    return cl
+
+
+def upload_media_twitter(file_name: str) -> int:
     """
     Uploads media from a given image URL to Twitter and returns the media ID.
 
@@ -163,15 +180,10 @@ def upload_media(image_url: str, item_id: str, publish_date: str) -> int:
         int: The media ID of the uploaded image.
     """
 
-    file_name = f"{item_id}_{publish_date}.jpg"
     tweepy_api = get_twitter_conn_v1()
-    img_data = requests.get(image_url).content
-    with open(file_name, "wb") as handler:
-        handler.write(img_data)
     print("Uploading media...")
     post = tweepy_api.media_upload(filename=file_name)
     media_id = post.media_id
-    os.remove(file_name)
     return media_id
 
 
@@ -192,11 +204,36 @@ def tweet_capa(name: str, publish_date: str, media_id: int):
     try:
         print("Tweeting...")
         client.create_tweet(
-            text=f" {name} {publish_date} {TWITTER_ACCOUNTS[name]['account']} {TWITTER_ACCOUNTS[name]['tags']}",
+            text=f" {name} {publish_date} {CAPAS[name]['twitter']} {CAPAS[name]['tags']}",
             media_ids=[media_id],
         )
     except TwitterServerError as e:
         print(e)
+
+
+def post_insta(cl: Client, file_name: str, name: str, publish_date: str):
+    """
+    Posts the given information to the specified Instagram account.
+
+    Args:
+        image_url (str): The URL of the image to be posted.
+        item_id (str): The ID of the item associated with the media.
+        publish_date (str): The publish date of the item.
+
+    Returns:
+        None
+    """
+
+    insta_file_name = "insta.jpg"
+
+    image = Image.open(file_name).convert("RGB")
+    new_image = image.resize((680, 1050))
+    new_image.save(insta_file_name)
+    cl.photo_upload(
+        insta_file_name,
+        caption=f"{name} {publish_date} {CAPAS[name]['instagram']} {CAPAS[name]['tags']}",
+    )
+    os.remove(insta_file_name)
 
 
 def main():
@@ -215,16 +252,20 @@ def main():
     capas = create_object()
     new_capas = populate_db(capas)
 
+    cl = get_insta_conn()
     for capa in new_capas:
-        if capa["name"] in TWITTER_ACCOUNTS:
-            print(f"Tweeting {capa['name']}")
-            media_id = upload_media(
-                capa["image_url"],
-                capa["item_id"],
-                capa["publish_date"],
-            )
+        if capa["name"] in CAPAS:
+            file_name = f"{capa['item_id']}_{capa['publish_date']}.jpg"
+            img_data = requests.get(capa["image_url"]).content
+            with open(file_name, "wb") as handler:
+                handler.write(img_data)
+            media_id = upload_media_twitter(file_name)
             tweet_capa(capa["name"], capa["publish_date"], media_id)
             print(f"Tweeted {capa['name']}")
+            post_insta(cl, file_name, capa["name"], capa["publish_date"])
+            print(f"Posted {capa['name']}")
+            os.remove(file_name)
+    cl.logout()
 
 
 if __name__ == "__main__":
