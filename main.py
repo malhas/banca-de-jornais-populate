@@ -252,7 +252,7 @@ def main():
     capas = create_object()
     new_capas = populate_db(capas)
 
-    cl = get_insta_conn()
+    # cl = get_insta_conn()
     for capa in new_capas:
         if capa["name"] in CAPAS:
             file_name = f"{capa['item_id']}_{capa['publish_date']}.jpg"
@@ -262,10 +262,10 @@ def main():
             media_id = upload_media_twitter(file_name)
             tweet_capa(capa["name"], capa["publish_date"], media_id)
             print(f"Tweeted {capa['name']}")
-            post_insta(cl, file_name, capa["name"], capa["publish_date"])
-            print(f"Posted {capa['name']}")
+            # post_insta(cl, file_name, capa["name"], capa["publish_date"])
+            # print(f"Posted {capa['name']}")
             os.remove(file_name)
-    cl.logout()
+    # cl.logout()
 
 
 if __name__ == "__main__":
