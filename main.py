@@ -60,17 +60,21 @@ def create_object() -> list:
     for endpoint in ENDPOINTS:
         document = requests.get(BASE_URL + endpoint).text
         dom_dict = xmltodict.parse(document)
-        category = dom_dict["newsstand"]["name"]
-        for element in dom_dict["newsstand"]["bj_editionsgroup"]["bj_related_image"]:
-            capa = {
-                "name": element["name"],
-                "link": element["link"],
-                "image_url": element["image_url"],
-                "publish_date": element["publish_date"],
-                "item_id": element["id"],
-                "category": category,
-            }
-            capas.append(capa)
+        try:
+            category = dom_dict["newsstand"]["name"]
+        except KeyError:
+            print(f"Issue getting data for {endpoint}")
+        else:
+            for element in dom_dict["newsstand"]["bj_editionsgroup"]["bj_related_image"]:
+                capa = {
+                    "name": element["name"],
+                    "link": element["link"],
+                    "image_url": element["image_url"],
+                    "publish_date": element["publish_date"],
+                    "item_id": element["id"],
+                    "category": category,
+                }
+                capas.append(capa)
     print(f"Found {len(capas)} capas")
     return capas
 
