@@ -20,6 +20,7 @@ TWITTER_ACCESS_TOKEN = os.environ.get("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_SECRET = os.environ.get("TWITTER_ACCESS_SECRET")
 INSTAGRAM_USERNAME = os.environ.get("INSTAGRAM_USERNAME")
 INSTAGRAM_PASSWORD = os.environ.get("INSTAGRAM_PASSWORD")
+VERCEL_WEBHOOK = os.environ.get("VERCEL_WEBHOOK")
 
 CAPAS = {
     "Expresso": {"twitter": "@expresso", "instagram": "@jornalexpresso", "tags": "#Notícias"},
@@ -118,6 +119,9 @@ def populate_db(items: list) -> list:
                 )
                 new_capas.append(item)
                 updated += 1
+
+    if count > 0 or updated > 0:
+        requests.get(VERCEL_WEBHOOK)
 
     print(f"Inserted {count} capas and updated {updated} capas")
     return new_capas
