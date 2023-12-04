@@ -35,4 +35,5 @@ jobs:
                   TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
                   INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
                   INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
+                  VERCEL_WEBHOOK: ${{ secrets.VERCEL_WEBHOOK }}
               run: python main.py
