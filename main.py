@@ -120,8 +120,8 @@ def populate_db(items: list) -> list:
                 new_capas.append(item)
                 updated += 1
 
-    if count > 0 or updated > 0:
-        requests.get(VERCEL_WEBHOOK)
+    # if count > 0 or updated > 0:
+    #     requests.get(VERCEL_WEBHOOK)
 
     print(f"Inserted {count} capas and updated {updated} capas")
     return new_capas
