@@ -6,8 +6,6 @@ import certifi
 from dotenv import load_dotenv
 import tweepy
 from tweepy.errors import TwitterServerError
-from instagrapi import Client
-from PIL import Image
 
 load_dotenv()
 
@@ -18,34 +16,32 @@ TWITTER_API_KEY = os.environ.get("TWITTER_API_KEY")
 TWITTER_API_SECRET = os.environ.get("TWITTER_API_SECRET")
 TWITTER_ACCESS_TOKEN = os.environ.get("TWITTER_ACCESS_TOKEN")
 TWITTER_ACCESS_SECRET = os.environ.get("TWITTER_ACCESS_SECRET")
-INSTAGRAM_USERNAME = os.environ.get("INSTAGRAM_USERNAME")
-INSTAGRAM_PASSWORD = os.environ.get("INSTAGRAM_PASSWORD")
 VERCEL_WEBHOOK = os.environ.get("VERCEL_WEBHOOK")
 
 CAPAS = {
-    "Expresso": {"twitter": "@expresso", "instagram": "@jornalexpresso", "tags": "#Notícias"},
-    "Nascer do SOL": {"twitter": "@solonline", "instagram": "@jornalsol", "tags": "#Notícias"},
-    "Correio da Manhã": {"twitter": "@cmjornal", "instagram": "@correiodamanhaoficial", "tags": "#Notícias"},
-    "Jornal de Notícias": {"twitter": "@jornalnoticias", "instagram": "@jornaldenoticias", "tags": "#Notícias"},
-    "Público": {"twitter": "@publico", "instagram": "@publico.pt", "tags": "#Notícias"},
-    "Diário de Notícias": {"twitter": "@dntwit", "instagram": "@diariodenoticias.pt", "tags": "#Notícias"},
-    "O Jornal Económico": {"twitter": "@ojeconomico", "instagram": "@jornaleconomico", "tags": "#Economia"},
-    "Jornal de Negócios": {"twitter": "@JNegocios", "instagram": "@negocios.pt", "tags": "#Economia"},
-    "O Jogo": {"twitter": "@ojogo", "instagram": "@diariodesportivo.ojogo", "tags": "#Desporto"},
-    "A Bola": {"twitter": "@abolapt", "instagram": "@abolapt", "tags": "#Desporto"},
-    "Record": {"twitter": "@Record_Portugal", "instagram": "@record_portugal", "tags": "#Desporto"},
-    "El País": {"twitter": "@elpais_espana", "instagram": "@el_pais", "tags": "#Noticias"},
-    "El Mundo": {"twitter": "@elmundoes", "instagram": "@elmundo_es", "tags": "#Noticias"},
-    "Le Monde": {"twitter": "@lemondefr", "instagram": "@lemondefr", "tags": "#Noticias"},
-    "Le Figaro": {"twitter": "@Le_Figaro", "instagram": "@lefigarofr", "tags": "#Noticias"},
-    "The Daily Telegraph": {"twitter": "@Telegraph", "instagram": "@telegraph", "tags": "#News"},
-    "The Guardian": {"twitter": "@guardian", "instagram": "@guardian", "tags": "#News"},
-    "The Independent": {"twitter": "@independent", "instagram": "@the.independent", "tags": "#News"},
-    "The Daily Mirror": {"twitter": "@Mirror", "instagram": "@dailymirror", "tags": "#News"},
-    "Marca": {"twitter": "@marca", "instagram": "@marca", "tags": "#Deporte"},
-    "AS": {"twitter": "@diarioas", "instagram": "@diarioas", "tags": "#Deporte"},
-    "Gazzetta dello Sport": {"twitter": "@Gazzetta_it", "instagram": "@gazzettadellosport", "tags": "#Sport"},
-    "L'Équipe": {"twitter": "@lequipe", "instagram": "@lequipe", "tags": "#Sport"},
+    "Expresso": {"twitter": "@expresso", "tags": "#Notícias"},
+    "Nascer do SOL": {"twitter": "@solonline", "tags": "#Notícias"},
+    "Correio da Manhã": {"twitter": "@cmjornal", "tags": "#Notícias"},
+    "Jornal de Notícias": {"twitter": "@jornalnoticias", "tags": "#Notícias"},
+    "Público": {"twitter": "@publico", "tags": "#Notícias"},
+    "Diário de Notícias": {"twitter": "@dntwit", "tags": "#Notícias"},
+    "O Jornal Económico": {"twitter": "@ojeconomico", "tags": "#Economia"},
+    "Jornal de Negócios": {"twitter": "@JNegocios", "tags": "#Economia"},
+    "O Jogo": {"twitter": "@ojogo", "tags": "#Desporto"},
+    "A Bola": {"twitter": "@abolapt", "tags": "#Desporto"},
+    "Record": {"twitter": "@Record_Portugal", "tags": "#Desporto"},
+    "El País": {"twitter": "@elpais_espana", "tags": "#Noticias"},
+    "El Mundo": {"twitter": "@elmundoes", "tags": "#Noticias"},
+    "Le Monde": {"twitter": "@lemondefr", "tags": "#Noticias"},
+    "Le Figaro": {"twitter": "@Le_Figaro", "tags": "#Noticias"},
+    "The Daily Telegraph": {"twitter": "@Telegraph", "tags": "#News"},
+    "The Guardian": {"twitter": "@guardian", "tags": "#News"},
+    "The Independent": {"twitter": "@independent", "tags": "#News"},
+    "The Daily Mirror": {"twitter": "@Mirror", "tags": "#News"},
+    "Marca": {"twitter": "@marca", "tags": "#Deporte"},
+    "AS": {"twitter": "@diarioas", "tags": "#Deporte"},
+    "Gazzetta dello Sport": {"twitter": "@Gazzetta_it", "tags": "#Sport"},
+    "L'Équipe": {"twitter": "@lequipe", "tags": "#Sport"},
 }
 
 
@@ -102,23 +98,47 @@ def populate_db(items: list) -> list:
         print(e)
         exit(1)
     db = client["capasjornais"]
-    collection = db["Capas"]
+    collection = db["Covers"]
     for item in items:
-        dbitem = collection.find_one(
-            {"name": item["name"], "publish_date": item["publish_date"], "item_id": item["item_id"]}
-        )
+        dbitem = collection.find_one({"item_id": item["item_id"]})
+        new_item = {
+            "name": item["name"],
+            "editions": [{"publish_date": item["publish_date"], "image_url": item["image_url"]}],
+            "link": item["link"],
+            "item_id": item["item_id"],
+            "category": item["category"],
+        }
         if not dbitem:
-            collection.insert_one(item)
-            new_capas.append(item)
+            collection.insert_one(new_item)
+            new_capas.append(new_item)
             count += 1
         else:
-            if item["image_url"] != dbitem["image_url"]:
+            if item["publish_date"] == dbitem["editions"][0]["publish_date"]:
+                if item["image_url"] != dbitem["editions"][0]["image_url"]:
+                    collection.update_one(
+                        {"item_id": item["item_id"]},
+                        {
+                            "$set": {
+                                "editions.0": {"publish_date": item["publish_date"], "image_url": item["image_url"]}
+                            }
+                        },
+                    )
+                    new_capas.append(new_item)
+                    updated += 1
+            else:
                 collection.update_one(
-                    {"name": item["name"], "publish_date": item["publish_date"], "item_id": item["item_id"]},
-                    {"$set": item},
+                    {"item_id": item["item_id"]},
+                    {
+                        "$push": {
+                            "editions": {
+                                "$each": [{"publish_date": item["publish_date"], "image_url": item["image_url"]}],
+                                "$position": 0,
+                            }
+                        }
+                    },
                 )
-                new_capas.append(item)
-                updated += 1
+                new_capas.append(new_item)
+                count += 1
 
     # if count > 0 or updated > 0:
     #     requests.get(VERCEL_WEBHOOK)
@@ -160,19 +180,6 @@ def get_twitter_conn_v2() -> tweepy.Client:
     )
 
     return client
-
-
-def get_insta_conn() -> Client:
-    """
-    Get an instance of the `Client` class to connect to Instagram.
-
-    :return: An instance of the `Client` class.
-    :rtype: Client
-    """
-    cl = Client()
-    cl.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
-
-    return cl
 
 
 def upload_media_twitter(file_name: str) -> int:
@@ -219,31 +226,6 @@ def tweet_capa(name: str, publish_date: str, media_id: int):
         print(e)
 
 
-def post_insta(cl: Client, file_name: str, name: str, publish_date: str):
-    """
-    Posts the given information to the specified Instagram account.
-
-    Args:
-        image_url (str): The URL of the image to be posted.
-        item_id (str): The ID of the item associated with the media.
-        publish_date (str): The publish date of the item.
-
-    Returns:
-        None
-    """
-
-    insta_file_name = "insta.jpg"
-
-    image = Image.open(file_name).convert("RGB")
-    new_image = image.resize((680, 1050))
-    new_image.save(insta_file_name)
-    cl.photo_upload(
-        insta_file_name,
-        caption=f"{name} {publish_date} {CAPAS[name]['instagram']} {CAPAS[name]['tags']}",
-    )
-    os.remove(insta_file_name)
-
-
 def main():
     """
     Executes the main functionality of the program.
@@ -260,20 +242,16 @@ def main():
     capas = create_object()
     new_capas = populate_db(capas)
 
-    # cl = get_insta_conn()
     for capa in new_capas:
         if capa["name"] in CAPAS:
-            file_name = f"{capa['item_id']}_{capa['publish_date']}.jpg"
-            img_data = requests.get(capa["image_url"]).content
+            file_name = f"{capa['item_id']}_{capa['editions'][0]['publish_date']}.jpg"
+            img_data = requests.get(capa["editions"][0]["image_url"]).content
             with open(file_name, "wb") as handler:
                 handler.write(img_data)
             media_id = upload_media_twitter(file_name)
-            tweet_capa(capa["name"], capa["publish_date"], media_id)
+            tweet_capa(capa["name"], capa["editions"][0]["publish_date"], media_id)
             print(f"Tweeted {capa['name']}")
-            # post_insta(cl, file_name, capa["name"], capa["publish_date"])
-            # print(f"Posted {capa['name']}")
             os.remove(file_name)
-    # cl.logout()
 
 
 if __name__ == "__main__":
