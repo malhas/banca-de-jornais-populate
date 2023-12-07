@@ -107,6 +107,8 @@ def populate_db(items: list) -> list:
             "link": item["link"],
             "item_id": item["item_id"],
             "category": item["category"],
+            "last_url": item["image_url"],
+            "last_date": item["publish_date"],
         }
         if not dbitem:
             collection.insert_one(new_item)
@@ -119,7 +121,8 @@ def populate_db(items: list) -> list:
                         {"item_id": item["item_id"]},
                         {
                             "$set": {
-                                "editions.0": {"publish_date": item["publish_date"], "image_url": item["image_url"]}
+                                "editions.0": {"publish_date": item["publish_date"], "image_url": item["image_url"]},
+                                "last_url": item["image_url"],
                             }
                         },
                     )
@@ -134,7 +137,8 @@ def populate_db(items: list) -> list:
                                 "$each": [{"publish_date": item["publish_date"], "image_url": item["image_url"]}],
                                 "$position": 0,
                             }
-                        }
+                        },
+                        "$set": {"last_url": item["image_url"], "last_date": item["publish_date"]},
                     },
                 )
                 new_capas.append(new_item)
