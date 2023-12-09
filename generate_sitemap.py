@@ -21,30 +21,8 @@ def create_object() -> list:
     db = client["capasjornais"]
     collection = db["Covers"]
     capas = list(collection.find({}))
-    return capas
-
-
-def populate_db(items: list) -> list:
-    uri = f"mongodb+srv://admin:{MONGODB_PASSWORD}@cluster0.3goysx3.mongodb.net/?retryWrites=true&w=majority"
-    client = MongoClient(uri, tlsCAFile=certifi.where())
-    try:
-        client.admin.command("ping")
-        print("Pinged your deployment. You successfully connected to MongoDB!")
-    except Exception as e:
-        print(e)
-        exit(1)
-    db = client["capasjornais"]
-    collection = db["Covers"]
-    for item in items:
-        collection.update_one(
-            {"item_id": item["item_id"]},
-            {
-                "$set": {
-                    "last_url": item["editions"][0]["image_url"],
-                    "last_date": item["editions"][0]["publish_date"],
-                }
-            },
-        )
+    allCapasId = [capa["item_id"] for capa in capas]
+    print(allCapasId)
 
 
 def main():
@@ -60,8 +38,7 @@ def main():
     - None
     """
 
-    capas = create_object()
-    populate_db(capas)
+    create_object()
 
 
 if __name__ == "__main__":

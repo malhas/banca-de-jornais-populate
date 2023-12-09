@@ -223,7 +223,7 @@ def tweet_capa(name: str, publish_date: str, media_id: int):
     try:
         print("Tweeting...")
         client.create_tweet(
-            text=f" {name} {publish_date} {CAPAS[name]['twitter']} {CAPAS[name]['tags']}",
+            text=f" {name} {publish_date} {CAPAS[name]['twitter']} {CAPAS[name]['tags']} https://www.janasbancas.pt",
             media_ids=[media_id],
         )
     except TwitterServerError as e:

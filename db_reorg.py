@@ -1,11 +1,7 @@
-import xmltodict
 import os
-import requests
 from pymongo import MongoClient
 import certifi
 from dotenv import load_dotenv
-import tweepy
-from tweepy.errors import TwitterServerError
 
 load_dotenv()
 
